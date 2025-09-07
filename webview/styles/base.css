@@ -1,0 +1,115 @@
+:root {
+	--bg: var(--vscode-editor-background);
+	--fg: var(--vscode-editor-foreground);
+	--button: var(--vscode-button-background);
+	--buttonHover: var(--vscode-button-hoverBackground);
+}
+
+body {
+	margin: 0;
+	color: var(--fg);
+	background: var(--bg);
+	font-family: var(--vscode-font-family, sans-serif);
+	font-size: var(--vscode-font-size, 13px);
+}
+
+.container { padding: 20px; max-width: 960px; margin: 0; }
+
+/* Adminer-like layout */
+.adminer { display:flex; min-height:100vh; }
+#menu { width: 280px; max-width: 320px; border-right:1px solid var(--vscode-panel-border); padding: 12px; overflow:auto; }
+#menu h1 { font-size: 16px; margin: 0 0 8px 0; font-weight:600; }
+#menu .links { display:flex; gap:8px; flex-wrap:wrap; margin: 10px 0; }
+#menu .links a, #menu .links .disabled { color: var(--vscode-textLink-foreground); cursor:pointer; }
+#menu .links .disabled { opacity:.6; cursor: default; }
+#filter-schema-container { margin: 12px 0; }
+#filter-schema-input { width:100%; }
+#db_schemas { list-style:none; margin:0; padding:0; }
+#db_schemas li { margin: 2px 0; }
+button.link.schema { background:none; border:none; color: var(--vscode-foreground); text-align:left; padding:4px 6px; width:100%; border-radius:3px; cursor:pointer; }
+button.link.schema:hover { background: var(--vscode-list-hoverBackground); }
+button.link.schema.selected { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+
+#content { flex:1; min-width:0; padding: 16px; overflow:auto; }
+#breadcrumb { color: var(--vscode-descriptionForeground); }
+#tables-views { margin-top: 8px; }
+.scrollable { overflow:auto; border:1px solid var(--vscode-panel-border); border-radius:3px; }
+table.nowrap { width:100%; border-collapse:collapse; }
+table.nowrap thead tr { background: var(--vscode-editor-background); position: sticky; top: 0; }
+table.nowrap th, table.nowrap td { border-bottom:1px solid var(--vscode-panel-border); text-align:left; padding:6px 8px; }
+table.nowrap th button.link, table.nowrap td button.link { background:none; border:none; color: var(--vscode-textLink-foreground); cursor:pointer; padding:0; }
+
+.sqlbox textarea#sqlInput { width:100%; height:160px; background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); border:1px solid var(--vscode-editorWidget-border); padding:8px; border-radius:3px; }
+.results { overflow:auto; border:1px solid var(--vscode-panel-border); border-radius:3px; }
+
+/* Grid used by query results */
+table.vscode-grid { width:100%; border-collapse: collapse; }
+table.vscode-grid thead th { position: sticky; top:0; background: var(--vscode-editor-background); border-bottom:1px solid var(--vscode-panel-border); text-align:left; padding:6px 8px; }
+table.vscode-grid tbody td { border-bottom:1px solid var(--vscode-panel-border); padding:4px 8px; }
+
+.hidden { display:none; }
+
+input, select, button, textarea {
+	background: var(--vscode-input-background);
+	color: var(--vscode-input-foreground);
+	border: 1px solid var(--vscode-input-border, transparent);
+	padding: 4px 8px;
+	border-radius: 3px;
+}
+
+textarea { height: 140px; resize: vertical; }
+
+button {
+	background: var(--button);
+	color: var(--vscode-button-foreground);
+	cursor: pointer;
+	border: none;
+	height: 28px;
+}
+
+button:hover { background: var(--buttonHover); }
+
+label { display: block; margin-top: 12px; }
+h1 { font-size: 20px; font-weight: 600; margin: 0 0 10px 0; }
+.description { font-size: 14px; color: var(--vscode-descriptionForeground); margin-bottom: 20px; }
+.form-section { margin-bottom: 16px; }
+.section-title { font-size: 12px; font-weight: 700; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: .5px; opacity:.9; }
+.form-group { margin-bottom: 12px; }
+.group { margin-bottom: 12px; }
+.checkbox-container { display:flex; align-items:center; margin-bottom:8px; }
+.checkbox-label { margin:0 0 0 8px; font-size:13px; }
+.button-container { display:flex; gap:8px; margin-top:12px; }
+.btn-primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.btn-primary:hover { background: var(--vscode-button-hoverBackground); }
+.btn-secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+.btn-secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+.btn-link, .link { background: transparent; color: var(--vscode-textLink-foreground); border: none; height: auto; padding: 0; cursor: pointer; }
+.btn-link:hover, .link:hover { text-decoration: underline; }
+
+.status { margin-top: 16px; padding: 8px 12px; border-radius: 2px; font-size: 13px; display: none; border-left: 3px solid; }
+.status.success { background: var(--vscode-inputValidation-infoBackground); color: var(--vscode-inputValidation-infoForeground); border-left-color: var(--vscode-inputValidation-infoBorder); }
+.status.error { background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-inputValidation-errorForeground); border-left-color: var(--vscode-inputValidation-errorBorder); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--vscode-panel-border); margin-bottom: 8px; }
+.tab { padding: 6px 10px; cursor: pointer; border: 1px solid transparent; border-top-left-radius: 3px; border-top-right-radius: 3px; }
+.tab.active { border-color: var(--vscode-panel-border); border-bottom-color: var(--bg); background: var(--bg); }
+.tab:not(.active):hover { background: rgba(255,255,255,0.04); }
+.tabpane { display: none; }
+.tabpane.active { display: block; }
+
+/* Lists */
+.list { list-style: none; padding-left: 0; margin: 6px 0 0 0; }
+.list li { margin: 0; }
+.list .row { display:flex; align-items:center; gap:8px; padding: 4px 6px; border-bottom: 1px solid var(--vscode-panel-border); }
+.list .row:hover { background: var(--vscode-list-hoverBackground); }
+
+/* Results */
+.results { border: 1px solid var(--vscode-panel-border); overflow:auto; }
+.results table { border-collapse: collapse; width: 100%; }
+.results th { position: sticky; top: 0; background: var(--vscode-editor-background); border-bottom: 1px solid var(--vscode-panel-border); text-align: left; padding: 6px 8px; }
+.results td { border-bottom: 1px solid var(--vscode-panel-border); padding: 4px 8px; }
+.pagination { display:flex; align-items:center; gap:8px; margin-top: 8px; }
+.info { opacity: .8; font-size: 12px; }
+
+

@@ -1,6 +1,12 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+// const path = require('path');
+
+const { ConnectionsTreeProvider } = require('./src/tree/ConnectionsTreeProvider');
+const { WebviewController } = require('./src/webview/WebviewController');
+const { GlobalState } = require('./src/state/GlobalState');
+const { ConnectionManager } = require('./src/connection/ConnectionManager');
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -10,21 +16,27 @@ const vscode = require('vscode');
  */
 function activate(context) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "mssql-explorer" is now active!');
+	console.log('mssql-explorer activated');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('mssql-explorer.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+	const globalState = new GlobalState(context);
+	const connectionManager = new ConnectionManager(context, globalState);
+	const connectionsTree = new ConnectionsTreeProvider(globalState, connectionManager);
+	const treeView = vscode.window.createTreeView('mssqlConnections', { treeDataProvider: connectionsTree });
+	context.subscriptions.push(treeView);
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from mssql-explorer!');
-	});
+	const webviews = new WebviewController(context, globalState, connectionManager);
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('mssqlExplorer.newConnection', async () => {
+			webviews.openNewConnectionForm();
+		}),
+		vscode.commands.registerCommand('mssqlExplorer.refreshConnections', () => connectionsTree.refresh()),
+		vscode.commands.registerCommand('mssqlExplorer.openInTab', (item) => webviews.openConnection(item?.connectionId)),
+		vscode.commands.registerCommand('mssqlExplorer.connect', (item) => webviews.openConnection(item?.connectionId)),
+		vscode.commands.registerCommand('mssqlExplorer.disconnect', (item) => connectionsTree.disconnect(item)),
+		vscode.commands.registerCommand('mssqlExplorer.editConnection', (item) => connectionsTree.editConnection(item)),
+		vscode.commands.registerCommand('mssqlExplorer.deleteConnection', (item) => connectionsTree.deleteConnection(item))
+	);
 }
 
 // This method is called when your extension is deactivated
