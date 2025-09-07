@@ -1,36 +1,92 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+const { ConnectionDialogPanel, setGlobalReferences } = require('./connectionDialog');
+const { SimpleTreeDataProvider } = require('./simpleTreeProvider');
+const { MainContentPanel } = require('./mainContentPanel');
+const { QueryExecutor } = require('./queryExecutor');
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+// Database connection configuration
+let connectionConfig = null;
+let connectionPool = null;
+let treeDataProvider = null;
+let extensionContext;
 
-/**
- * @param {vscode.ExtensionContext} context
- */
 function activate(context) {
+    extensionContext = context;
+    console.log('MSSQL Explorer extension is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "mssql-explorer" is now active!');
+    // Create simple tree data provider
+    treeDataProvider = new SimpleTreeDataProvider();
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('mssql-explorer.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+    // Register tree data provider
+    vscode.window.createTreeView('mssqlExplorer', {
+        treeDataProvider: treeDataProvider
+    });
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from mssql-explorer!');
-	});
+    // Set global references for connection dialog
+    setGlobalReferences(treeDataProvider, connectionConfig, connectionPool);
 
-	context.subscriptions.push(disposable);
+    // Register commands
+    const connectCommand = vscode.commands.registerCommand('mssql-explorer.connect', async () => {
+        await connectToDatabase();
+    });
+
+    const disconnectCommand = vscode.commands.registerCommand('mssql-explorer.disconnect', async () => {
+        await disconnectFromDatabase();
+    });
+
+    const executeQueryCommand = vscode.commands.registerCommand('mssql-explorer.executeQuery', async () => {
+        await QueryExecutor.executeCustomQuery(connectionPool);
+    });
+
+    const openExplorerCommand = vscode.commands.registerCommand('mssql-explorer.openExplorer', () => {
+        MainContentPanel.createOrShow(context, connectionConfig, connectionPool);
+    });
+
+    // Add all commands to subscriptions
+    context.subscriptions.push(
+        connectCommand,
+        disconnectCommand,
+        executeQueryCommand,
+        openExplorerCommand
+    );
 }
 
-// This method is called when your extension is deactivated
-function deactivate() {}
+async function connectToDatabase() {
+    ConnectionDialogPanel.createOrShow(extensionContext);
+}
+
+async function disconnectFromDatabase() {
+    try {
+        if (connectionPool) {
+            await connectionPool.close();
+            connectionPool = null;
+            connectionConfig = null;
+            vscode.window.showInformationMessage('Disconnected from database');
+            treeDataProvider.refresh();
+        } else {
+            vscode.window.showInformationMessage('Not connected to any database');
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`Disconnect failed: ${error.message}`);
+    }
+}
+
+function deactivate() {
+    if (connectionPool) {
+        connectionPool.close();
+    }
+}
+
+// Function to update connection state from connection dialog
+function updateConnectionState(config, pool) {
+    connectionConfig = config;
+    connectionPool = pool;
+}
 
 module.exports = {
 	activate,
-	deactivate
-}
+	deactivate,
+	updateConnectionState
+};

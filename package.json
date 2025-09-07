@@ -7,20 +7,87 @@
     "vscode": "^1.103.0"
   },
   "categories": [
-    "Other"
+    "Database"
   ],
-  "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "mssql-explorer.helloWorld",
-      "title": "Hello World"
-    }]
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mssql-explorer",
+          "title": "MSSQL Explorer",
+          "icon": "$(database)"
+        }
+      ]
+    },
+    "views": {
+      "mssql-explorer": [
+        {
+          "id": "mssqlExplorer",
+          "name": "MSSQL Explorer",
+          "when": "true"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "mssql-explorer.connect",
+        "title": "Connect to Database",
+        "icon": "$(link)"
+      },
+      {
+        "command": "mssql-explorer.disconnect",
+        "title": "Disconnect",
+        "icon": "$(close)"
+      },
+      {
+        "command": "mssql-explorer.executeQuery",
+        "title": "Execute Query",
+        "icon": "$(play)"
+      },
+      {
+        "command": "mssql-explorer.openExplorer",
+        "title": "Open MSSQL Explorer",
+        "icon": "$(database)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "mssql-explorer.connect",
+          "when": "view == mssqlExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "mssql-explorer.disconnect",
+          "when": "view == mssqlExplorer",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "mssql-explorer.connect",
+          "when": "true"
+        },
+        {
+          "command": "mssql-explorer.disconnect",
+          "when": "true"
+        },
+        {
+          "command": "mssql-explorer.executeQuery",
+          "when": "true"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "vscode-test"
+  },
+  "dependencies": {
+    "msnodesqlv8": "^5.1.1",
+    "mssql": "^11.0.1"
   },
   "devDependencies": {
     "@types/vscode": "^1.103.0",
