@@ -5,16 +5,36 @@ class MssqlTreeProvider {
         this.connectionManager = connectionManager;
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+        this._filters = {
+            database: new Map(),
+            tables: new Map(),
+            views: new Map(),
+            procedures: new Map(),
+            functions: new Map()
+        };
     }
 
     refresh() { this._onDidChangeTreeData.fire(); }
+
+    setGroupFilter(group, dbName, filter) {
+        const map = this._filters[group];
+        if (!map) { return; }
+        if (filter) { map.set(dbName, filter.toLowerCase()); }
+        else { map.delete(dbName); }
+        this.refresh();
+    }
+
+    setDatabaseFilter(dbName, filter) {
+        if (filter) { this._filters.database.set(dbName, filter.toLowerCase()); }
+        else { this._filters.database.delete(dbName); }
+        this.refresh();
+    }
 
     getTreeItem(element) { return element; }
 
     async getChildren(element) {
         const cm = this.connectionManager;
         if (!element) {
-            // Root: list connections directly
             const connections = cm.listConnections();
             if (!connections || connections.length === 0) {
                 const tip = new vscode.TreeItem('Add a connection to get started', vscode.TreeItemCollapsibleState.None);
@@ -26,7 +46,6 @@ class MssqlTreeProvider {
         }
 
         if (element.contextValue === 'connection') {
-            // Show folders: Databases
             const databases = new vscode.TreeItem('Databases', vscode.TreeItemCollapsibleState.Collapsed);
             databases.iconPath = new vscode.ThemeIcon('database');
             databases.contextValue = 'databases';
@@ -40,35 +59,51 @@ class MssqlTreeProvider {
             const request = active.pool.request();
             const result = await request.query('SELECT name FROM sys.databases WHERE database_id > 4 ORDER BY name');
             return result.recordset.map(row => {
-                const item = new vscode.TreeItem(row.name, vscode.TreeItemCollapsibleState.Collapsed);
+                const dbName = row.name;
+                const item = new vscode.TreeItem(dbName, vscode.TreeItemCollapsibleState.Collapsed);
                 item.iconPath = new vscode.ThemeIcon('database');
-                item.contextValue = 'database';
-                item.id = `db|${row.name}`;
+                item.contextValue = this._filters.database.has(dbName) ? 'databaseFiltered' : 'database';
+                item.id = `db|${dbName}`;
+                const dFilter = this._filters.database.get(dbName);
+                item.description = dFilter ? `filter: ${dFilter}` : undefined;
+                item.tooltip = dFilter ? `DB Filter: ${dFilter}` : undefined;
                 return item;
             });
         }
 
-        if (element.contextValue === 'database') {
+        if (element.contextValue === 'database' || element.contextValue === 'databaseFiltered') {
             const dbName = String(element.id).split('|')[1];
             const tables = new vscode.TreeItem('Tables', vscode.TreeItemCollapsibleState.Collapsed);
             tables.iconPath = new vscode.ThemeIcon('table');
-            tables.contextValue = 'tables';
+            tables.contextValue = this._filters.tables.has(dbName) ? 'tablesFiltered' : 'tables';
             tables.id = `tables|${dbName}`;
+            const tFilter = this._filters.tables.get(dbName);
+            tables.description = tFilter ? `filter: ${tFilter}` : undefined;
+            tables.tooltip = tFilter ? `Filter: ${tFilter}` : undefined;
 
             const views = new vscode.TreeItem('Views', vscode.TreeItemCollapsibleState.Collapsed);
             views.iconPath = new vscode.ThemeIcon('eye');
-            views.contextValue = 'views';
+            views.contextValue = this._filters.views.has(dbName) ? 'viewsFiltered' : 'views';
             views.id = `views|${dbName}`;
+            const vFilter = this._filters.views.get(dbName);
+            views.description = vFilter ? `filter: ${vFilter}` : undefined;
+            views.tooltip = vFilter ? `Filter: ${vFilter}` : undefined;
 
             const procs = new vscode.TreeItem('Stored Procedures', vscode.TreeItemCollapsibleState.Collapsed);
             procs.iconPath = new vscode.ThemeIcon('gear');
-            procs.contextValue = 'procedures';
+            procs.contextValue = this._filters.procedures.has(dbName) ? 'proceduresFiltered' : 'procedures';
             procs.id = `procedures|${dbName}`;
+            const pFilter = this._filters.procedures.get(dbName);
+            procs.description = pFilter ? `filter: ${pFilter}` : undefined;
+            procs.tooltip = pFilter ? `Filter: ${pFilter}` : undefined;
 
             const funcs = new vscode.TreeItem('Functions', vscode.TreeItemCollapsibleState.Collapsed);
             funcs.iconPath = new vscode.ThemeIcon('symbol-function');
-            funcs.contextValue = 'functions';
+            funcs.contextValue = this._filters.functions.has(dbName) ? 'functionsFiltered' : 'functions';
             funcs.id = `functions|${dbName}`;
+            const fFilter = this._filters.functions.get(dbName);
+            funcs.description = fFilter ? `filter: ${fFilter}` : undefined;
+            funcs.tooltip = fFilter ? `Filter: ${fFilter}` : undefined;
 
             return [tables, views, procs, funcs];
         }
@@ -76,32 +111,74 @@ class MssqlTreeProvider {
         const active = this.connectionManager.active;
         if (!active) { return []; }
 
-        if (element.contextValue === 'tables') {
+        const applyDbFilter = (dbName, label) => {
+            const dbFilter = this._filters.database.get(dbName);
+            if (!dbFilter) { return true; }
+            return label.toLowerCase().includes(dbFilter);
+        };
+
+        if (element.contextValue === 'tables' || element.contextValue === 'tablesFiltered') {
             const request = active.pool.request();
             const dbName = String(element.id).split('|')[1];
             const result = await request.query(`USE [${dbName}]; SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME`);
-            return result.recordset.map(row => this._asLeaf(`${row.TABLE_SCHEMA}.${row.TABLE_NAME}`, 'table', 'table', dbName, row.TABLE_SCHEMA, row.TABLE_NAME));
+            let rows = result.recordset;
+            const filter = this._filters.tables.get(dbName);
+            if (filter) { rows = rows.filter(r => `${r.TABLE_SCHEMA}.${r.TABLE_NAME}`.toLowerCase().includes(filter)); }
+            rows = rows.filter(r => applyDbFilter(dbName, `${r.TABLE_SCHEMA}.${r.TABLE_NAME}`));
+            const header = new vscode.TreeItem(`(${rows.length})`, vscode.TreeItemCollapsibleState.None);
+            header.iconPath = new vscode.ThemeIcon('list-ordered');
+            header.contextValue = 'info';
+            header.tooltip = `${rows.length} tables` + (filter || this._filters.database.get(dbName) ? ` (filtered)` : '');
+            const items = rows.map(row => this._asLeaf(`${row.TABLE_SCHEMA}.${row.TABLE_NAME}`, 'table', 'table', dbName, row.TABLE_SCHEMA, row.TABLE_NAME));
+            return [header, ...items];
         }
 
-        if (element.contextValue === 'views') {
+        if (element.contextValue === 'views' || element.contextValue === 'viewsFiltered') {
             const request = active.pool.request();
             const dbName = String(element.id).split('|')[1];
             const result = await request.query(`USE [${dbName}]; SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS ORDER BY TABLE_SCHEMA, TABLE_NAME`);
-            return result.recordset.map(row => this._asLeaf(`${row.TABLE_SCHEMA}.${row.TABLE_NAME}`, 'view', 'eye', dbName, row.TABLE_SCHEMA, row.TABLE_NAME));
+            let rows = result.recordset;
+            const filter = this._filters.views.get(dbName);
+            if (filter) { rows = rows.filter(r => `${r.TABLE_SCHEMA}.${r.TABLE_NAME}`.toLowerCase().includes(filter)); }
+            rows = rows.filter(r => applyDbFilter(dbName, `${r.TABLE_SCHEMA}.${r.TABLE_NAME}`));
+            const header = new vscode.TreeItem(`(${rows.length})`, vscode.TreeItemCollapsibleState.None);
+            header.iconPath = new vscode.ThemeIcon('list-ordered');
+            header.contextValue = 'info';
+            header.tooltip = `${rows.length} views` + (filter || this._filters.database.get(dbName) ? ` (filtered)` : '');
+            const items = rows.map(row => this._asLeaf(`${row.TABLE_SCHEMA}.${row.TABLE_NAME}`, 'view', 'eye', dbName, row.TABLE_SCHEMA, row.TABLE_NAME));
+            return [header, ...items];
         }
 
-        if (element.contextValue === 'procedures') {
+        if (element.contextValue === 'procedures' || element.contextValue === 'proceduresFiltered') {
             const request = active.pool.request();
             const dbName = String(element.id).split('|')[1];
             const result = await request.query(`USE [${dbName}]; SELECT SPECIFIC_SCHEMA AS [schema], SPECIFIC_NAME AS [name] FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE='PROCEDURE' ORDER BY SPECIFIC_SCHEMA, SPECIFIC_NAME`);
-            return result.recordset.map(row => this._asLeaf(`${row.schema}.${row.name}`, 'storedProcedure', 'gear', dbName, row.schema, row.name));
+            let rows = result.recordset;
+            const filter = this._filters.procedures.get(dbName);
+            if (filter) { rows = rows.filter(r => `${r.schema}.${r.name}`.toLowerCase().includes(filter)); }
+            rows = rows.filter(r => applyDbFilter(dbName, `${r.schema}.${r.name}`));
+            const header = new vscode.TreeItem(`(${rows.length})`, vscode.TreeItemCollapsibleState.None);
+            header.iconPath = new vscode.ThemeIcon('list-ordered');
+            header.contextValue = 'info';
+            header.tooltip = `${rows.length} procedures` + (filter || this._filters.database.get(dbName) ? ` (filtered)` : '');
+            const items = rows.map(row => this._asLeaf(`${row.schema}.${row.name}`, 'storedProcedure', 'gear', dbName, row.schema, row.name));
+            return [header, ...items];
         }
 
-        if (element.contextValue === 'functions') {
+        if (element.contextValue === 'functions' || element.contextValue === 'functionsFiltered') {
             const request = active.pool.request();
             const dbName = String(element.id).split('|')[1];
             const result = await request.query(`USE [${dbName}]; SELECT SPECIFIC_SCHEMA AS [schema], SPECIFIC_NAME AS [name] FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE='FUNCTION' ORDER BY SPECIFIC_SCHEMA, SPECIFIC_NAME`);
-            return result.recordset.map(row => this._asLeaf(`${row.schema}.${row.name}`, 'function', 'symbol-function', dbName, row.schema, row.name));
+            let rows = result.recordset;
+            const filter = this._filters.functions.get(dbName);
+            if (filter) { rows = rows.filter(r => `${r.schema}.${r.name}`.toLowerCase().includes(filter)); }
+            rows = rows.filter(r => applyDbFilter(dbName, `${r.schema}.${r.name}`));
+            const header = new vscode.TreeItem(`(${rows.length})`, vscode.TreeItemCollapsibleState.None);
+            header.iconPath = new vscode.ThemeIcon('list-ordered');
+            header.contextValue = 'info';
+            header.tooltip = `${rows.length} functions` + (filter || this._filters.database.get(dbName) ? ` (filtered)` : '');
+            const items = rows.map(row => this._asLeaf(`${row.schema}.${row.name}`, 'function', 'symbol-function', dbName, row.schema, row.name));
+            return [header, ...items];
         }
 
         return [];

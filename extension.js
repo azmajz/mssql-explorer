@@ -33,6 +33,28 @@ function activate(context) {
 	}
 
 	context.subscriptions.push(
+		vscode.commands.registerCommand('mssql-explorer.filterGroup', async (item) => {
+			if (!item || !item.id) { return; }
+			const [group, dbName] = String(item.id).split('|');
+			const value = await vscode.window.showInputBox({ prompt: `Filter ${group} in ${dbName}`, placeHolder: 'Enter search text' });
+			tree.setGroupFilter(group, dbName, value || '');
+		}),
+		vscode.commands.registerCommand('mssql-explorer.clearGroupFilter', async (item) => {
+			if (!item || !item.id) { return; }
+			const [group, dbName] = String(item.id).split('|');
+			tree.setGroupFilter(group, dbName, '');
+		}),
+		vscode.commands.registerCommand('mssql-explorer.filterDatabase', async (item) => {
+			if (!item || !item.id || !String(item.id).startsWith('db|')) { return; }
+			const dbName = String(item.id).split('|')[1];
+			const value = await vscode.window.showInputBox({ prompt: `Filter all objects in ${dbName}`, placeHolder: 'Enter search text' });
+			tree.setDatabaseFilter(dbName, value || '');
+		}),
+		vscode.commands.registerCommand('mssql-explorer.clearDatabaseFilter', async (item) => {
+			if (!item || !item.id || !String(item.id).startsWith('db|')) { return; }
+			const dbName = String(item.id).split('|')[1];
+			tree.setDatabaseFilter(dbName, '');
+		}),
 		vscode.commands.registerCommand('mssql-explorer.previewData', async (item) => {
 			if (!connectionManager.active) { return vscode.window.showErrorMessage('Not connected'); }
 			if (!item || !item.databaseName || !item.label) { return; }
