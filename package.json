@@ -1,6 +1,6 @@
 {
   "name": "mssql-explorer",
-  "displayName": "mssql-explorer",
+  "displayName": "MSSQL Explorer",
   "description": "desc-mssql-explorer",
   "version": "0.0.1",
   "engines": {
@@ -12,15 +12,131 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "mssql-explorer.helloWorld",
-      "title": "Hello World"
-    }]
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mssql-explorer",
+          "title": "MSSQL Explorer",
+          "icon": "./media/mssql.svg"
+        }
+      ]
+    },
+    "views": {
+      "mssql-explorer": [
+        {
+          "id": "mssqlExplorer",
+          "name": "MSSQL Explorer",
+          "when": "true"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "mssql-explorer.addConnection",
+        "title": "MSSQL: Add Connection",
+        "icon": "$(add)"
+      },
+      {
+        "command": "mssql-explorer.previewData",
+        "title": "Preview Data",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "mssql-explorer.copyTableName",
+        "title": "Copy Table Name",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "mssql-explorer.editConnection",
+        "title": "MSSQL: Edit Connection",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "mssql-explorer.deleteConnection",
+        "title": "MSSQL: Delete Connection",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "mssql-explorer.connect",
+        "title": "MSSQL: Connect",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "mssql-explorer.disconnect",
+        "title": "MSSQL: Disconnect",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "mssql-explorer.refresh",
+        "title": "MSSQL: Refresh",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "mssql-explorer.addConnection",
+          "when": "view == mssqlExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "mssql-explorer.refresh",
+          "when": "view == mssqlExplorer",
+          "group": "navigation@9"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "mssql-explorer.previewData",
+          "when": "view == mssqlExplorer && viewItem == table",
+          "group": "inline@0"
+        },
+        {
+          "command": "mssql-explorer.previewData",
+          "when": "view == mssqlExplorer && viewItem == view",
+          "group": "inline@0"
+        },
+        {
+          "command": "mssql-explorer.copyTableName",
+          "when": "view == mssqlExplorer && viewItem == table",
+          "group": "inline@1"
+        },
+        {
+          "command": "mssql-explorer.connect",
+          "when": "view == mssqlExplorer && viewItem == connection",
+          "group": "inline@1"
+        },
+        {
+          "command": "mssql-explorer.disconnect",
+          "when": "view == mssqlExplorer && viewItem == connection",
+          "group": "inline@1"
+        },
+        {
+          "command": "mssql-explorer.editConnection",
+          "when": "view == mssqlExplorer && viewItem == connection",
+          "group": "inline@2"
+        },
+        {
+          "command": "mssql-explorer.deleteConnection",
+          "when": "view == mssqlExplorer && viewItem == connection",
+          "group": "inline@3"
+        },
+        {
+          "command": "mssql-explorer.refresh",
+          "when": "view == mssqlExplorer",
+          "group": "inline@9"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "vscode-test"
+  },
+  "dependencies": {
+    "msnodesqlv8": "^5.1.1",
+    "mssql": "^11.0.1"
   },
   "devDependencies": {
     "@types/vscode": "^1.103.0",
