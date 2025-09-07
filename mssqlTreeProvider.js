@@ -32,6 +32,46 @@ class MssqlTreeProvider {
 
     getTreeItem(element) { return element; }
 
+    async buildFilterResults(kind, dbName) {
+        if (!this.connectionManager.active) { return '# Not connected'; }
+        const pool = this.connectionManager.active.pool;
+        const dbFilter = this._filters.database.get(dbName) || '';
+        const sqlFor = {
+            tables: `USE [${dbName}]; SELECT TABLE_SCHEMA AS [schema], TABLE_NAME AS [name] FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME`,
+            views: `USE [${dbName}]; SELECT TABLE_SCHEMA AS [schema], TABLE_NAME AS [name] FROM INFORMATION_SCHEMA.VIEWS ORDER BY TABLE_SCHEMA, TABLE_NAME`,
+            procedures: `USE [${dbName}]; SELECT SPECIFIC_SCHEMA AS [schema], SPECIFIC_NAME AS [name] FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE='PROCEDURE' ORDER BY SPECIFIC_SCHEMA, SPECIFIC_NAME`,
+            functions: `USE [${dbName}]; SELECT SPECIFIC_SCHEMA AS [schema], SPECIFIC_NAME AS [name] FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE='FUNCTION' ORDER BY SPECIFIC_SCHEMA, SPECIFIC_NAME`
+        };
+        const apply = (rows, g) => {
+            const gf = this._filters[g].get(dbName) || '';
+            return rows
+                .filter(r => (gf ? `${r.schema}.${r.name}`.toLowerCase().includes(gf) : true))
+                .filter(r => (dbFilter ? `${r.schema}.${r.name}`.toLowerCase().includes(dbFilter) : true))
+                .map(r => `${r.schema}.${r.name}`);
+        };
+        const gather = async (g) => {
+            const res = await pool.request().query(sqlFor[g]);
+            return apply(res.recordset, g);
+        };
+        let groups = [];
+        if (kind === 'db' || kind === 'database') {
+            groups = ['tables', 'procedures', 'views', 'functions'];
+        } else {
+            groups = [kind];
+        }
+        let md = `# Filter Results for ${dbName}\n\n`;
+        for (const g of groups) {
+            const list = await gather(g);
+            if (!list.length) { continue; }
+            const title = g === 'tables' ? 'Tables' : g === 'procedures' ? 'Stored Procedures' : g === 'views' ? 'Views' : 'Functions';
+            md += `## ${title} (${list.length})\n` + list.map(n => `- ${n}`).join('\n') + '\n\n';
+        }
+        if (md.trim() === `# Filter Results for ${dbName}`) {
+            md += 'No results.';
+        }
+        return md;
+    }
+
     async getChildren(element) {
         const cm = this.connectionManager;
         if (!element) {

@@ -55,6 +55,13 @@ function activate(context) {
 			const dbName = String(item.id).split('|')[1];
 			tree.setDatabaseFilter(dbName, '');
 		}),
+		vscode.commands.registerCommand('mssql-explorer.openFilterResults', async (item) => {
+			if (!item || !item.id) { return; }
+			const [kind, dbName] = String(item.id).split('|');
+			const content = await tree.buildFilterResults(kind, dbName);
+			const doc = await vscode.workspace.openTextDocument({ language: 'markdown', content });
+			await vscode.window.showTextDocument(doc, { preview: false });
+		}),
 		vscode.commands.registerCommand('mssql-explorer.previewData', async (item) => {
 			if (!connectionManager.active) { return vscode.window.showErrorMessage('Not connected'); }
 			if (!item || !item.databaseName || !item.label) { return; }

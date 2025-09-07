@@ -67,6 +67,11 @@
         "icon": "$(close)"
       },
       {
+        "command": "mssql-explorer.openFilterResults",
+        "title": "Open Filter Results",
+        "icon": "$(go-to-file)"
+      },
+      {
         "command": "mssql-explorer.editConnection",
         "title": "MSSQL: Edit Connection",
         "icon": "$(gear)"
@@ -107,20 +112,25 @@
       ],
       "view/item/context": [
         { "command": "mssql-explorer.filterDatabase", "when": "view == mssqlExplorer && viewItem == database", "group": "inline@0" },
-        { "command": "mssql-explorer.clearDatabaseFilter", "when": "view == mssqlExplorer && viewItem == databaseFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == databaseFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearDatabaseFilter", "when": "view == mssqlExplorer && viewItem == databaseFiltered", "group": "inline@2" },
         {
           "command": "mssql-explorer.previewData",
           "when": "view == mssqlExplorer && viewItem == view",
           "group": "inline@0"
         },
         { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == tables", "group": "inline@0" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == tablesFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == tablesFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == tablesFiltered", "group": "inline@2" },
         { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == views", "group": "inline@0" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == viewsFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == viewsFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == viewsFiltered", "group": "inline@2" },
         { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == procedures", "group": "inline@0" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == proceduresFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == proceduresFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == proceduresFiltered", "group": "inline@2" },
         { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == functions", "group": "inline@0" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == functionsFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == functionsFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == functionsFiltered", "group": "inline@2" },
         {
           "command": "mssql-explorer.connect",
           "when": "view == mssqlExplorer && viewItem == connection",
