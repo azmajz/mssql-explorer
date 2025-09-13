@@ -27,7 +27,9 @@ const EXTENSION_CONFIG = {
         ADD_QUERY: 'mssql-explorer.addQuery',
         EDIT_QUERY: 'mssql-explorer.editQuery',
         DELETE_QUERY: 'mssql-explorer.deleteQuery',
-        EXECUTE_QUERY: 'mssql-explorer.executeQuery'
+        EXECUTE_QUERY: 'mssql-explorer.executeQuery',
+        SELECT_DATA_WITH_OPTIONS: 'mssql-explorer.selectDataWithOptions',
+        OPEN_TEST_VIEW: 'mssql-explorer.openTestView'
     },
     
     // Context values

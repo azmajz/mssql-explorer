@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const { EXTENSION_CONFIG } = require('../constants');
 const { ConnectionCommands } = require('./connectionCommands');
-const { DatabaseCommands } = require('./databaseCommands');
+// const { DatabaseCommands } = require('./databaseCommands');
 const { FilterCommands } = require('./filterCommands');
 const { ObjectCommands } = require('./objectCommands');
 const { QueryCommands } = require('./queryCommands');
@@ -32,7 +32,7 @@ function registerCommands(context, dependencies) {
     );
 
     // Database and object commands
-    const databaseCommands = new DatabaseCommands(connectionManager, connectionsTreeProvider);
+    // const databaseCommands = new DatabaseCommands(connectionManager, connectionsTreeProvider);
     const objectCommands = new ObjectCommands(connectionManager, gridViewerPanel);
     context.subscriptions.push(
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.PREVIEW_DATA, 
@@ -40,7 +40,11 @@ function registerCommands(context, dependencies) {
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.COPY_TABLE_NAME, 
             (item) => objectCommands.copyTableName(item)),
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.OPEN_OBJECT, 
-            (args) => objectCommands.openObject(args))
+            (args) => objectCommands.openObject(args)),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.SELECT_DATA_WITH_OPTIONS, 
+            (item) => objectCommands.selectDataWithOptions(item)),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.OPEN_TEST_VIEW, 
+            (item) => objectCommands.openTestView(item))
     );
 
     // Filter commands

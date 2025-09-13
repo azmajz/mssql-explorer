@@ -1,4 +1,6 @@
 const vscode = require('vscode');
+const { AdvancedGridViewerPanel } = require('../advancedGridViewer');
+const { TestViewerPanel } = require('../testViewer');
 
 class ObjectCommands {
     constructor(connectionManager, gridViewerPanel) {
@@ -32,6 +34,56 @@ class ObjectCommands {
         
         await vscode.env.clipboard.writeText(String(item.label));
         vscode.window.showInformationMessage('Table name copied');
+    }
+
+    async selectDataWithOptions(item) {
+        if (!this.connectionManager.active) {
+            return vscode.window.showErrorMessage('Not connected');
+        }
+        
+        // Handle tree item clicks - items now have databaseName, schema, name properties
+        if (!item || !item.databaseName || !item.schema || !item.name) {
+            return vscode.window.showErrorMessage('Invalid item for data selection');
+        }
+        
+        const { databaseName, schema, name } = item;
+        const kind = item.contextValue || 'table';
+        
+        AdvancedGridViewerPanel.createOrShow(
+            this.connectionManager.active.pool, 
+            databaseName, 
+            schema, 
+            name, 
+            kind,
+            {
+                selectedColumns: [], // Will be populated by the advanced viewer
+                orderBy: '',
+                currentPage: 1,
+                pageSize: 100
+            }
+        );
+    }
+
+    async openTestView(item) {
+        if (!this.connectionManager.active) {
+            return vscode.window.showErrorMessage('Not connected');
+        }
+        
+        // Handle tree item clicks - items now have databaseName, schema, name properties
+        if (!item || !item.databaseName || !item.schema || !item.name) {
+            return vscode.window.showErrorMessage('Invalid item for test view');
+        }
+        
+        const { databaseName, schema, name } = item;
+        const kind = item.contextValue || 'table';
+        
+        TestViewerPanel.createOrShow(
+            this.connectionManager.active.pool, 
+            databaseName, 
+            schema, 
+            name, 
+            kind
+        );
     }
 
     async openObject(args) {

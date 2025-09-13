@@ -125,6 +125,16 @@
         "command": "mssql-explorer.executeQuery",
         "title": "MSSQL: Execute Query",
         "icon": "$(play)"
+      },
+      {
+        "command": "mssql-explorer.selectDataWithOptions",
+        "title": "Show Advanced Grid",
+        "icon": "$(table)"
+      },
+      {
+        "command": "mssql-explorer.openTestView",
+        "title": "Open Test View",
+        "icon": "$(test-view)"
       }
     ],
     "menus": {
@@ -158,6 +168,26 @@
           "command": "mssql-explorer.previewData",
           "when": "view == mssqlConnections && viewItem == view",
           "group": "inline@0"
+        },
+        {
+          "command": "mssql-explorer.selectDataWithOptions",
+          "when": "view == mssqlConnections && viewItem == table",
+          "group": "inline@1"
+        },
+        {
+          "command": "mssql-explorer.openTestView",
+          "when": "view == mssqlConnections && viewItem == table",
+          "group": "inline@2"
+        },
+        {
+          "command": "mssql-explorer.selectDataWithOptions",
+          "when": "view == mssqlConnections && viewItem == view",
+          "group": "inline@1"
+        },
+        {
+          "command": "mssql-explorer.openTestView",
+          "when": "view == mssqlConnections && viewItem == view",
+          "group": "inline@2"
         },
         { "command": "mssql-explorer.filterGroup", "when": "view == mssqlConnections && viewItem == tables && viewItem != databaseFiltered", "group": "inline@0" },
         { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlConnections && viewItem == tablesFiltered", "group": "inline@1" },

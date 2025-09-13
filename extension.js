@@ -3,6 +3,8 @@ const { ConnectionManager } = require('./connectionManager');
 const { ConnectionsTreeProvider } = require('./connectionsTreeProvider');
 const { BookmarkedTreeProvider } = require('./bookmarkedTreeProvider');
 const { GridViewerPanel } = require('./gridViewer');
+const { AdvancedGridViewerPanel } = require('./advancedGridViewer');
+const { TestViewerPanel } = require('./testViewer');
 const { QueryManager } = require('./queryManager');
 const { registerCommands } = require('./commands');
 
