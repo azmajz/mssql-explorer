@@ -1,8 +1,9 @@
 const vscode = require('vscode');
 const { ConnectionManager } = require('./connectionManager');
-const { MssqlTreeProvider } = require('./mssqlTreeProvider');
+const { ConnectionsTreeProvider } = require('./connectionsTreeProvider');
+const { BookmarkedTreeProvider } = require('./bookmarkedTreeProvider');
 const { GridViewerPanel } = require('./gridViewer');
-const { ConnectionsPanel } = require('./connectionsPanel');
+const { QueryManager } = require('./queryManager');
 const { registerCommands } = require('./commands');
 
 /**
@@ -11,23 +12,31 @@ const { registerCommands } = require('./commands');
 function activate(context) {
     // Initialize core components
     const connectionManager = new ConnectionManager(context);
-    const treeProvider = new MssqlTreeProvider(connectionManager);
+    const queryManager = new QueryManager(context);
+    const connectionsTreeProvider = new ConnectionsTreeProvider(connectionManager);
+    const bookmarkedTreeProvider = new BookmarkedTreeProvider(queryManager);
     const gridViewerPanel = GridViewerPanel;
-    const connectionsPanel = ConnectionsPanel;
 
-    // Create tree view
-    const treeView = vscode.window.createTreeView('mssqlExplorer', { 
-        treeDataProvider: treeProvider, 
+    // Create tree views
+    const connectionsView = vscode.window.createTreeView('mssqlConnections', { 
+        treeDataProvider: connectionsTreeProvider, 
         showCollapseAll: true 
     });
-    context.subscriptions.push(treeView);
+    context.subscriptions.push(connectionsView);
+
+    const bookmarkedView = vscode.window.createTreeView('mssqlBookmarked', { 
+        treeDataProvider: bookmarkedTreeProvider, 
+        showCollapseAll: true 
+    });
+    context.subscriptions.push(bookmarkedView);
 
     // Register all commands
     registerCommands(context, {
         connectionManager,
-        treeProvider,
+        connectionsTreeProvider,
+        bookmarkedTreeProvider,
         gridViewerPanel,
-        connectionsPanel
+        queryManager
     });
 }
 

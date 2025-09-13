@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const { EXTENSION_CONFIG } = require('./constants');
 
-class MssqlTreeProvider {
+class ConnectionsTreeProvider {
     constructor(connectionManager) {
         this.connectionManager = connectionManager;
         this._onDidChangeTreeData = new vscode.EventEmitter();
@@ -83,16 +83,6 @@ class MssqlTreeProvider {
                 tip.command = { command: 'mssql-explorer.addConnection', title: 'Add Connection' };
                 return [tip];
             }
-            
-            // Create a "CONNECTIONS" parent node
-            const connectionsNode = new vscode.TreeItem('CONNECTIONS', vscode.TreeItemCollapsibleState.Expanded);
-            connectionsNode.contextValue = 'connections';
-            connectionsNode.id = 'connections';
-            return [connectionsNode];
-        }
-
-        if (element.contextValue === 'connections') {
-            const connections = cm.listConnections();
             return connections.map(c => this._asConnectionItem(c));
         }
 
@@ -266,7 +256,7 @@ class MssqlTreeProvider {
         item.description = isConnected ? 'connected' : 'disconnected';
         
         // Set context for when conditions
-        vscode.commands.executeCommand('setContext', 'mssqlExplorer.isConnected', isConnected);
+        vscode.commands.executeCommand('setContext', 'mssqlConnections.isConnected', isConnected);
 
         return item;
     }
@@ -374,6 +364,4 @@ class MssqlTreeProvider {
     }
 }
 
-module.exports = { MssqlTreeProvider };
-
-
+module.exports = { ConnectionsTreeProvider };

@@ -4,6 +4,7 @@ const { ConnectionCommands } = require('./connectionCommands');
 const { DatabaseCommands } = require('./databaseCommands');
 const { FilterCommands } = require('./filterCommands');
 const { ObjectCommands } = require('./objectCommands');
+const { QueryCommands } = require('./queryCommands');
 
 /**
  * Register all extension commands
@@ -11,10 +12,10 @@ const { ObjectCommands } = require('./objectCommands');
  * @param {Object} dependencies - Dependencies needed by commands
  */
 function registerCommands(context, dependencies) {
-    const { connectionManager, treeProvider, gridViewerPanel, connectionsPanel } = dependencies;
+    const { connectionManager, connectionsTreeProvider, bookmarkedTreeProvider, gridViewerPanel, queryManager } = dependencies;
 
     // Connection management commands
-    const connectionCommands = new ConnectionCommands(connectionManager, treeProvider);
+    const connectionCommands = new ConnectionCommands(connectionManager, connectionsTreeProvider);
     context.subscriptions.push(
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.ADD_CONNECTION, 
             () => connectionCommands.addConnection()),
@@ -26,12 +27,10 @@ function registerCommands(context, dependencies) {
             (item) => connectionCommands.connect(item)),
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.DISCONNECT, 
             () => connectionCommands.disconnect()),
-        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.OPEN_CONNECTIONS_PANEL, 
-            () => connectionsPanel.createOrShow(context, connectionManager))
     );
 
     // Database and object commands
-    const databaseCommands = new DatabaseCommands(connectionManager, treeProvider);
+    const databaseCommands = new DatabaseCommands(connectionManager, connectionsTreeProvider);
     const objectCommands = new ObjectCommands(connectionManager, gridViewerPanel);
     context.subscriptions.push(
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.PREVIEW_DATA, 
@@ -43,7 +42,7 @@ function registerCommands(context, dependencies) {
     );
 
     // Filter commands
-    const filterCommands = new FilterCommands(treeProvider);
+    const filterCommands = new FilterCommands(connectionsTreeProvider);
     context.subscriptions.push(
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.FILTER_GROUP, 
             (item) => filterCommands.filterGroup(item)),
@@ -57,10 +56,26 @@ function registerCommands(context, dependencies) {
             (item) => filterCommands.openFilterResults(item))
     );
 
+    // Query management commands
+    const queryCommands = new QueryCommands(queryManager, bookmarkedTreeProvider, connectionManager);
+    context.subscriptions.push(
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.ADD_QUERY, 
+            () => queryCommands.addQuery()),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.EDIT_QUERY, 
+            (item) => queryCommands.editQuery(item)),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.DELETE_QUERY, 
+            (item) => queryCommands.deleteQuery(item)),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.EXECUTE_QUERY, 
+            (item) => queryCommands.executeQuery(item))
+    );
+
     // Utility commands
     context.subscriptions.push(
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.REFRESH, 
-            () => treeProvider.refresh())
+            () => {
+                connectionsTreeProvider.refresh();
+                bookmarkedTreeProvider.refresh();
+            })
     );
 }
 

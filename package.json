@@ -24,8 +24,13 @@
     "views": {
       "mssql-explorer": [
         {
-          "id": "mssqlExplorer",
-          "name": "MSSQL Explorer",
+          "id": "mssqlConnections",
+          "name": "CONNECTIONS",
+          "when": "true"
+        },
+        {
+          "id": "mssqlBookmarked",
+          "name": "BOOKMARKED",
           "when": "true"
         }
       ]
@@ -97,79 +102,114 @@
         "icon": "$(refresh)"
       },
       {
-        "command": "mssql-explorer.openConnectionsPanel",
-        "title": "MSSQL: Open Connections Panel",
-        "icon": "$(list)"
+        "command": "mssql-explorer.addQuery",
+        "title": "MSSQL: Add Query",
+        "icon": "$(add)"
+      },
+      {
+        "command": "mssql-explorer.editQuery",
+        "title": "MSSQL: Edit Query",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "mssql-explorer.deleteQuery",
+        "title": "MSSQL: Delete Query",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "mssql-explorer.executeQuery",
+        "title": "MSSQL: Execute Query",
+        "icon": "$(play)"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "mssql-explorer.addConnection",
-          "when": "view == mssqlExplorer",
+          "when": "view == mssqlConnections",
           "group": "navigation@1"
         },
         {
-          "command": "mssql-explorer.openConnectionsPanel",
-          "when": "view == mssqlExplorer",
-          "group": "navigation@2"
+          "command": "mssql-explorer.refresh",
+          "when": "view == mssqlConnections",
+          "group": "navigation@9"
+        },
+        {
+          "command": "mssql-explorer.addQuery",
+          "when": "view == mssqlBookmarked",
+          "group": "navigation@1"
         },
         {
           "command": "mssql-explorer.refresh",
-          "when": "view == mssqlExplorer",
+          "when": "view == mssqlBookmarked",
           "group": "navigation@9"
         }
       ],
       "view/item/context": [
-        { "command": "mssql-explorer.filterDatabase", "when": "view == mssqlExplorer && viewItem == database", "group": "inline@0" },
-        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == databaseFiltered", "group": "inline@1" },
-        { "command": "mssql-explorer.clearDatabaseFilter", "when": "view == mssqlExplorer && viewItem == databaseFiltered", "group": "inline@2" },
+        { "command": "mssql-explorer.filterDatabase", "when": "view == mssqlConnections && viewItem == database", "group": "inline@0" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlConnections && viewItem == databaseFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearDatabaseFilter", "when": "view == mssqlConnections && viewItem == databaseFiltered", "group": "inline@2" },
         {
           "command": "mssql-explorer.previewData",
-          "when": "view == mssqlExplorer && viewItem == view",
+          "when": "view == mssqlConnections && viewItem == view",
           "group": "inline@0"
         },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == tables && viewItem != databaseFiltered", "group": "inline@0" },
-        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == tablesFiltered", "group": "inline@1" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == tablesFiltered", "group": "inline@2" },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == views && viewItem != databaseFiltered", "group": "inline@0" },
-        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == viewsFiltered", "group": "inline@1" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == viewsFiltered", "group": "inline@2" },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == procedures && viewItem != databaseFiltered", "group": "inline@0" },
-        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == proceduresFiltered", "group": "inline@1" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == proceduresFiltered", "group": "inline@2" },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == functions && viewItem != databaseFiltered", "group": "inline@0" },
-        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == functionsFiltered", "group": "inline@1" },
-        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == functionsFiltered", "group": "inline@2" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlConnections && viewItem == tables && viewItem != databaseFiltered", "group": "inline@0" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlConnections && viewItem == tablesFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlConnections && viewItem == tablesFiltered", "group": "inline@2" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlConnections && viewItem == views && viewItem != databaseFiltered", "group": "inline@0" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlConnections && viewItem == viewsFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlConnections && viewItem == viewsFiltered", "group": "inline@2" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlConnections && viewItem == procedures && viewItem != databaseFiltered", "group": "inline@0" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlConnections && viewItem == proceduresFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlConnections && viewItem == proceduresFiltered", "group": "inline@2" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlConnections && viewItem == functions && viewItem != databaseFiltered", "group": "inline@0" },
+        { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlConnections && viewItem == functionsFiltered", "group": "inline@1" },
+        { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlConnections && viewItem == functionsFiltered", "group": "inline@2" },
         {
           "command": "mssql-explorer.connect",
-          "when": "view == mssqlExplorer && viewItem == connection && !mssqlExplorer.isConnected",
+          "when": "view == mssqlConnections && viewItem == connection && !mssqlConnections.isConnected",
           "group": "inline@1"
         },
         {
           "command": "mssql-explorer.disconnect",
-          "when": "view == mssqlExplorer && viewItem == connection && mssqlExplorer.isConnected",
+          "when": "view == mssqlConnections && viewItem == connection && mssqlConnections.isConnected",
           "group": "inline@1"
         },
         {
           "command": "mssql-explorer.editConnection",
-          "when": "view == mssqlExplorer && viewItem == connection",
+          "when": "view == mssqlConnections && viewItem == connection",
           "group": "inline@2"
         },
         {
           "command": "mssql-explorer.deleteConnection",
-          "when": "view == mssqlExplorer && viewItem == connection",
+          "when": "view == mssqlConnections && viewItem == connection",
           "group": "inline@3"
         },
         {
           "command": "mssql-explorer.refresh",
-          "when": "view == mssqlExplorer && viewItem != databaseFiltered",
+          "when": "view == mssqlConnections && viewItem != databaseFiltered",
           "group": "inline@9"
         },
         {
           "command": "mssql-explorer.addConnection",
-          "when": "view == mssqlExplorer && viewItem == connections",
+          "when": "view == mssqlConnections && viewItem == connections",
           "group": "inline@1"
+        },
+        {
+          "command": "mssql-explorer.editQuery",
+          "when": "view == mssqlBookmarked && viewItem == savedQuery",
+          "group": "inline@1"
+        },
+        {
+          "command": "mssql-explorer.deleteQuery",
+          "when": "view == mssqlBookmarked && viewItem == savedQuery",
+          "group": "inline@2"
+        },
+        {
+          "command": "mssql-explorer.executeQuery",
+          "when": "view == mssqlBookmarked && viewItem == savedQuery",
+          "group": "inline@0"
         }
       ]
     }

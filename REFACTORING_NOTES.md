@@ -1,4 +1,14 @@
 # MSSQL Explorer - Refactoring Summary
+✅ Complete Restructure - VS Code File Explorer Style
+1. Separate View Containers
+CONNECTIONS - A collapsible section for database connections and their objects
+BOOKMARKED - A collapsible section for saved SQL queries
+
+
+create separate tree providers 
+Create separate CONNECTIONS view
+Create separate BOOKMARKED view
+Update package.json with separate view containers
 
 ## Overview
 This document outlines the refactoring changes made to improve code organization, maintainability, and consistency.

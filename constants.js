@@ -15,7 +15,6 @@ const EXTENSION_CONFIG = {
         CONNECT: 'mssql-explorer.connect',
         DISCONNECT: 'mssql-explorer.disconnect',
         REFRESH: 'mssql-explorer.refresh',
-        OPEN_CONNECTIONS_PANEL: 'mssql-explorer.openConnectionsPanel',
         PREVIEW_DATA: 'mssql-explorer.previewData',
         COPY_TABLE_NAME: 'mssql-explorer.copyTableName',
         OPEN_OBJECT: 'mssql-explorer.openObject',
@@ -23,13 +22,19 @@ const EXTENSION_CONFIG = {
         CLEAR_GROUP_FILTER: 'mssql-explorer.clearGroupFilter',
         FILTER_DATABASE: 'mssql-explorer.filterDatabase',
         CLEAR_DATABASE_FILTER: 'mssql-explorer.clearDatabaseFilter',
-        OPEN_FILTER_RESULTS: 'mssql-explorer.openFilterResults'
+        OPEN_FILTER_RESULTS: 'mssql-explorer.openFilterResults',
+        ADD_QUERY: 'mssql-explorer.addQuery',
+        EDIT_QUERY: 'mssql-explorer.editQuery',
+        DELETE_QUERY: 'mssql-explorer.deleteQuery',
+        EXECUTE_QUERY: 'mssql-explorer.executeQuery'
     },
     
     // Context values
     CONTEXT_VALUES: {
         CONNECTION: 'connection',
         CONNECTIONS: 'connections',
+        BOOKMARKED: 'bookmarked',
+        SAVED_QUERY: 'savedQuery',
         DATABASE: 'database',
         DATABASE_FILTERED: 'databaseFiltered',
         TABLES: 'tables',
