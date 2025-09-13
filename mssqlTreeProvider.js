@@ -1,4 +1,5 @@
 const vscode = require('vscode');
+const { EXTENSION_CONFIG } = require('./constants');
 
 class MssqlTreeProvider {
     constructor(connectionManager) {
@@ -82,10 +83,32 @@ class MssqlTreeProvider {
                 tip.command = { command: 'mssql-explorer.addConnection', title: 'Add Connection' };
                 return [tip];
             }
+            
+            // Create a "CONNECTIONS" parent node
+            const connectionsNode = new vscode.TreeItem('CONNECTIONS', vscode.TreeItemCollapsibleState.Expanded);
+            connectionsNode.contextValue = 'connections';
+            connectionsNode.id = 'connections';
+            return [connectionsNode];
+        }
+
+        if (element.contextValue === 'connections') {
+            const connections = cm.listConnections();
             return connections.map(c => this._asConnectionItem(c));
         }
 
         if (element.contextValue === 'connection') {
+            // Extract connection ID from element.id
+            const connectionId = String(element.id).split('|')[1];
+            
+            // Only show databases if this connection is active/connected
+            const isConnected = this.connectionManager.active && this.connectionManager.active.id === connectionId;
+            if (!isConnected) {
+                const connectItem = new vscode.TreeItem('Click to connect', vscode.TreeItemCollapsibleState.None);
+                connectItem.iconPath = new vscode.ThemeIcon('plug');
+                connectItem.command = { command: 'mssql-explorer.connect', title: 'Connect', arguments: [{ connectionId: connectionId }] };
+                return [connectItem];
+            }
+            
             const databases = new vscode.TreeItem('Databases', vscode.TreeItemCollapsibleState.Collapsed);
             databases.iconPath = new vscode.ThemeIcon('database');
             databases.contextValue = 'databases';
@@ -101,7 +124,6 @@ class MssqlTreeProvider {
             return result.recordset.map(row => {
                 const dbName = row.name;
                 const item = new vscode.TreeItem(dbName, vscode.TreeItemCollapsibleState.Collapsed);
-                item.iconPath = new vscode.ThemeIcon('database');
                 item.contextValue = this._filters.database.has(dbName) ? 'databaseFiltered' : 'database';
                 item.id = `db|${dbName}`;
                 const dFilter = this._filters.database.get(dbName);
@@ -113,6 +135,14 @@ class MssqlTreeProvider {
 
         if (element.contextValue === 'database' || element.contextValue === 'databaseFiltered') {
             const dbName = String(element.id).split('|')[1];
+            const dbFilter = this._filters.database.get(dbName);
+            
+            // If database filter is applied, show count badges and hide search/refresh buttons
+            if (dbFilter) {
+                return await this._getFilteredDatabaseItems(dbName, dbFilter);
+            }
+            
+            // Normal view without database filter
             const tables = new vscode.TreeItem('Tables', vscode.TreeItemCollapsibleState.Collapsed);
             tables.iconPath = new vscode.ThemeIcon('table');
             tables.contextValue = this._filters.tables.has(dbName) ? 'tablesFiltered' : 'tables';
@@ -225,12 +255,107 @@ class MssqlTreeProvider {
     }
 
     _asConnectionItem(connection) {
-        const item = new vscode.TreeItem(connection.name || connection.config.server, vscode.TreeItemCollapsibleState.Collapsed);
-        item.iconPath = new vscode.ThemeIcon('server');
+        const isConnected = this.connectionManager.active && this.connectionManager.active.id === connection.id;
+        const item = new vscode.TreeItem(
+            connection.name || connection.config.server, 
+            vscode.TreeItemCollapsibleState.Collapsed
+        );
+        
         item.contextValue = 'connection';
         item.id = `conn|${connection.id}`;
-        item.description = this.connectionManager.active && this.connectionManager.active.id === connection.id ? 'connected' : '';
+        item.description = isConnected ? 'connected' : 'disconnected';
+        
+        // Set context for when conditions
+        vscode.commands.executeCommand('setContext', 'mssqlExplorer.isConnected', isConnected);
+
         return item;
+    }
+
+    async _getFilteredDatabaseItems(dbName, dbFilter) {
+        const active = this.connectionManager.active;
+        if (!active) { return []; }
+
+        const applyDbFilter = (label) => {
+            return label.toLowerCase().includes(dbFilter);
+        };
+
+        // Get counts for each object type
+        const [tablesCount, viewsCount, proceduresCount, functionsCount] = await Promise.all([
+            this._getFilteredCount(dbName, 'tables', dbFilter),
+            this._getFilteredCount(dbName, 'views', dbFilter),
+            this._getFilteredCount(dbName, 'procedures', dbFilter),
+            this._getFilteredCount(dbName, 'functions', dbFilter)
+        ]);
+
+        // Create items with count badges (no search/refresh buttons)
+        const tables = new vscode.TreeItem(`Tables (${tablesCount})`, vscode.TreeItemCollapsibleState.Collapsed);
+        tables.iconPath = new vscode.ThemeIcon('table');
+        tables.contextValue = 'tablesFiltered';
+        tables.id = `tables|${dbName}`;
+        tables.tooltip = `${tablesCount} tables matching "${dbFilter}"`;
+
+        const views = new vscode.TreeItem(`Views (${viewsCount})`, vscode.TreeItemCollapsibleState.Collapsed);
+        views.iconPath = new vscode.ThemeIcon('eye');
+        views.contextValue = 'viewsFiltered';
+        views.id = `views|${dbName}`;
+        views.tooltip = `${viewsCount} views matching "${dbFilter}"`;
+
+        const procs = new vscode.TreeItem(`Stored Procedures (${proceduresCount})`, vscode.TreeItemCollapsibleState.Collapsed);
+        procs.iconPath = new vscode.ThemeIcon('gear');
+        procs.contextValue = 'proceduresFiltered';
+        procs.id = `procedures|${dbName}`;
+        procs.tooltip = `${proceduresCount} procedures matching "${dbFilter}"`;
+
+        const funcs = new vscode.TreeItem(`Functions (${functionsCount})`, vscode.TreeItemCollapsibleState.Collapsed);
+        funcs.iconPath = new vscode.ThemeIcon('symbol-function');
+        funcs.contextValue = 'functionsFiltered';
+        funcs.id = `functions|${dbName}`;
+        funcs.tooltip = `${functionsCount} functions matching "${dbFilter}"`;
+
+        return [tables, views, procs, funcs];
+    }
+
+    async _getFilteredCount(dbName, objectType, dbFilter) {
+        const active = this.connectionManager.active;
+        if (!active) { return 0; }
+
+        const request = active.pool.request();
+        let query = '';
+        
+        switch (objectType) {
+            case 'tables':
+                query = `USE [${dbName}]; SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME`;
+                break;
+            case 'views':
+                query = `USE [${dbName}]; SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS ORDER BY TABLE_SCHEMA, TABLE_NAME`;
+                break;
+            case 'procedures':
+                query = `USE [${dbName}]; SELECT SPECIFIC_SCHEMA AS [schema], SPECIFIC_NAME AS [name] FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE='PROCEDURE' ORDER BY SPECIFIC_SCHEMA, SPECIFIC_NAME`;
+                break;
+            case 'functions':
+                query = `USE [${dbName}]; SELECT SPECIFIC_SCHEMA AS [schema], SPECIFIC_NAME AS [name] FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE='FUNCTION' ORDER BY SPECIFIC_SCHEMA, SPECIFIC_NAME`;
+                break;
+            default:
+                return 0;
+        }
+
+        try {
+            const result = await request.query(query);
+            let rows = result.recordset;
+            
+            // Apply database filter
+            rows = rows.filter(r => {
+                const label = objectType === 'tables' || objectType === 'views' 
+                    ? `${r.TABLE_SCHEMA}.${r.TABLE_NAME}`
+                    : `${r.schema}.${r.name}`;
+                return label.toLowerCase().includes(dbFilter);
+            });
+            
+            return rows.length;
+        } catch (error) {
+            console.error(`Error getting count for ${objectType}:`, error);
+            return 0;
+        }
     }
 
     _asLeaf(label, kind, icon, databaseName, schema, name) {
@@ -238,7 +363,7 @@ class MssqlTreeProvider {
         item.iconPath = new vscode.ThemeIcon(icon);
         item.contextValue = kind;
         item.command = {
-            command: 'mssql-explorer.openObject',
+            command: EXTENSION_CONFIG.COMMANDS.OPEN_OBJECT,
             title: 'Open',
             arguments: [{ databaseName, schema, name, kind }]
         };

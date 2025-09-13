@@ -39,8 +39,12 @@ class ConnectionManager {
     }
 
     async test(config) {
-        const pool = await sql.connect(config);
-        await pool.close();
+        try {
+            const pool = await sql.connect(config);
+            await pool.close();
+        } catch (error) {
+            throw new Error(`Connection test failed: ${error.message || error.toString()}`);
+        }
     }
 
     async connect(connection) {

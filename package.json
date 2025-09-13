@@ -1,7 +1,7 @@
 {
   "name": "mssql-explorer",
   "displayName": "MSSQL Explorer",
-  "description": "desc-mssql-explorer",
+  "description": "A VS Code extension for exploring and managing MSSQL databases",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.103.0"
@@ -83,18 +83,23 @@
       },
       {
         "command": "mssql-explorer.connect",
-        "title": "MSSQL: Connect",
+        "title": "Connect database",
         "icon": "$(plug)"
       },
       {
         "command": "mssql-explorer.disconnect",
-        "title": "MSSQL: Disconnect",
+        "title": "Disconnect database",
         "icon": "$(debug-disconnect)"
       },
       {
         "command": "mssql-explorer.refresh",
         "title": "MSSQL: Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "mssql-explorer.openConnectionsPanel",
+        "title": "MSSQL: Open Connections Panel",
+        "icon": "$(list)"
       }
     ],
     "menus": {
@@ -103,6 +108,11 @@
           "command": "mssql-explorer.addConnection",
           "when": "view == mssqlExplorer",
           "group": "navigation@1"
+        },
+        {
+          "command": "mssql-explorer.openConnectionsPanel",
+          "when": "view == mssqlExplorer",
+          "group": "navigation@2"
         },
         {
           "command": "mssql-explorer.refresh",
@@ -119,26 +129,26 @@
           "when": "view == mssqlExplorer && viewItem == view",
           "group": "inline@0"
         },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == tables", "group": "inline@0" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == tables && viewItem != databaseFiltered", "group": "inline@0" },
         { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == tablesFiltered", "group": "inline@1" },
         { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == tablesFiltered", "group": "inline@2" },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == views", "group": "inline@0" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == views && viewItem != databaseFiltered", "group": "inline@0" },
         { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == viewsFiltered", "group": "inline@1" },
         { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == viewsFiltered", "group": "inline@2" },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == procedures", "group": "inline@0" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == procedures && viewItem != databaseFiltered", "group": "inline@0" },
         { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == proceduresFiltered", "group": "inline@1" },
         { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == proceduresFiltered", "group": "inline@2" },
-        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == functions", "group": "inline@0" },
+        { "command": "mssql-explorer.filterGroup", "when": "view == mssqlExplorer && viewItem == functions && viewItem != databaseFiltered", "group": "inline@0" },
         { "command": "mssql-explorer.openFilterResults", "when": "view == mssqlExplorer && viewItem == functionsFiltered", "group": "inline@1" },
         { "command": "mssql-explorer.clearGroupFilter", "when": "view == mssqlExplorer && viewItem == functionsFiltered", "group": "inline@2" },
         {
           "command": "mssql-explorer.connect",
-          "when": "view == mssqlExplorer && viewItem == connection",
+          "when": "view == mssqlExplorer && viewItem == connection && !mssqlExplorer.isConnected",
           "group": "inline@1"
         },
         {
           "command": "mssql-explorer.disconnect",
-          "when": "view == mssqlExplorer && viewItem == connection",
+          "when": "view == mssqlExplorer && viewItem == connection && mssqlExplorer.isConnected",
           "group": "inline@1"
         },
         {
@@ -153,8 +163,13 @@
         },
         {
           "command": "mssql-explorer.refresh",
-          "when": "view == mssqlExplorer",
+          "when": "view == mssqlExplorer && viewItem != databaseFiltered",
           "group": "inline@9"
+        },
+        {
+          "command": "mssql-explorer.addConnection",
+          "when": "view == mssqlExplorer && viewItem == connections",
+          "group": "inline@1"
         }
       ]
     }

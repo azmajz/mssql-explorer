@@ -1,31 +1,34 @@
 const vscode = require('vscode');
+const { EXTENSION_CONFIG } = require('./constants');
 
 class GridViewerPanel {
     static panels = new Map(); // key: `${db}.${schema}.${name}`
 
-    static createOrShow(context, connectionPool, databaseName, schema, name, kind) {
+    static createOrShow(connectionPool, databaseName, schema, name, kind) {
         const key = `${databaseName}.${schema}.${name}`;
         const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
+        
         if (GridViewerPanel.panels.has(key)) {
             const existing = GridViewerPanel.panels.get(key);
             existing.panel.reveal(column);
             existing.update(connectionPool, databaseName, schema, name, kind);
             return existing;
         }
+        
         const panel = vscode.window.createWebviewPanel(
             'mssqlGridViewer',
             key,
             column || vscode.ViewColumn.Active,
             { enableScripts: true, retainContextWhenHidden: true }
         );
-        const instance = new GridViewerPanel(panel, context, connectionPool, databaseName, schema, name, kind);
+        
+        const instance = new GridViewerPanel(panel, connectionPool, databaseName, schema, name, kind);
         GridViewerPanel.panels.set(key, instance);
         return instance;
     }
 
-    constructor(panel, context, connectionPool, databaseName, schema, name, kind) {
+    constructor(panel, connectionPool, databaseName, schema, name, kind) {
         this.panel = panel;
-        this.context = context;
         this.connectionPool = connectionPool;
         this.databaseName = databaseName;
         this.schema = schema;
@@ -49,7 +52,7 @@ class GridViewerPanel {
     }
 
     async refresh() {
-        const query = `USE [${this.databaseName}]; SELECT TOP 1000 * FROM [${this.schema}].[${this.name}]`;
+        const query = `USE [${this.databaseName}]; SELECT TOP ${EXTENSION_CONFIG.GRID_VIEWER.MAX_ROWS} * FROM [${this.schema}].[${this.name}]`;
         let html = '';
         try {
             const result = await this.connectionPool.request().query(query);
@@ -67,10 +70,11 @@ class GridViewerPanel {
         let thead = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
         let tbody = rows.map(r => '<tr>' + cols.map(c => {
             const val = String(r[c] ?? '');
-            const truncated = val.length > 100 ? `${val.slice(0, 100)}…` : val;
+            const maxLength = EXTENSION_CONFIG.GRID_VIEWER.MAX_CELL_LENGTH;
+            const truncated = val.length > maxLength ? `${val.slice(0, maxLength)}…` : val;
             const title = this.escape(val);
             const cell = this.escape(truncated);
-            const moreAttr = val.length > 100 ? ` data-full="${title}" class="trunc"` : '';
+            const moreAttr = val.length > maxLength ? ` data-full="${title}" class="trunc"` : '';
             return `<td${moreAttr} title="${title}">${cell}</td>`;
         }).join('') + '</tr>').join('');
         return `<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
