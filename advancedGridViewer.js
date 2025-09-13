@@ -40,6 +40,8 @@ class AdvancedGridViewerPanel {
             currentPage: 1,
             pageSize: 100,
             searchTerm: '',
+            searchColumn: '',
+            searchOperator: 'contains',
             ...options
         };
         this.tableColumns = [];
@@ -89,8 +91,10 @@ class AdvancedGridViewerPanel {
                     await this.refresh();
                     break;
                 case 'search':
-                    console.log('Performing search with term:', message.searchTerm);
+                    console.log('Performing search with term:', message.searchTerm, 'in column:', message.searchColumn, 'using operator:', message.searchOperator);
                     this.options.searchTerm = message.searchTerm;
+                    this.options.searchColumn = message.searchColumn;
+                    this.options.searchOperator = message.searchOperator || 'contains';
                     this.options.selectedColumns = message.selectedColumns;
                     this.options.orderBy = message.orderBy;
                     this.options.currentPage = message.currentPage || 1;
@@ -204,12 +208,36 @@ class AdvancedGridViewerPanel {
             let countQuery = `USE [${this.databaseName}]; SELECT COUNT(*) as total FROM [${this.schema}].[${this.name}]`;
             
             // Add search WHERE clause if search term exists
-            if (this.options.searchTerm && this.options.searchTerm.trim()) {
+            if (this.options.searchTerm && this.options.searchTerm.trim() && this.options.searchColumn) {
                 const searchTerm = this.options.searchTerm.trim();
-                const searchConditions = this.options.selectedColumns.map(col => 
-                    `[${col}] LIKE '%${searchTerm.replace(/'/g, "''")}%'`
-                ).join(' OR ');
-                countQuery += ` WHERE (${searchConditions})`;
+                const searchColumn = this.options.searchColumn;
+                const searchOperator = this.options.searchOperator || 'contains';
+                const escapedTerm = searchTerm.replace(/'/g, "''");
+                
+                let whereClause = '';
+                switch (searchOperator) {
+                    case 'contains':
+                        whereClause = `[${searchColumn}] LIKE '%${escapedTerm}%'`;
+                        break;
+                    case 'equals':
+                        whereClause = `[${searchColumn}] = '${escapedTerm}'`;
+                        break;
+                    case 'starts_with':
+                        whereClause = `[${searchColumn}] LIKE '${escapedTerm}%'`;
+                        break;
+                    case 'ends_with':
+                        whereClause = `[${searchColumn}] LIKE '%${escapedTerm}'`;
+                        break;
+                    case 'not_contains':
+                        whereClause = `[${searchColumn}] NOT LIKE '%${escapedTerm}%'`;
+                        break;
+                    case 'not_equals':
+                        whereClause = `[${searchColumn}] != '${escapedTerm}'`;
+                        break;
+                    default:
+                        whereClause = `[${searchColumn}] LIKE '%${escapedTerm}%'`;
+                }
+                countQuery += ` WHERE ${whereClause}`;
             }
             
             const result = await this.connectionPool.request().query(countQuery);
@@ -235,12 +263,36 @@ class AdvancedGridViewerPanel {
         }
         
         // Add search WHERE clause if search term exists
-        if (this.options.searchTerm && this.options.searchTerm.trim()) {
+        if (this.options.searchTerm && this.options.searchTerm.trim() && this.options.searchColumn) {
             const searchTerm = this.options.searchTerm.trim();
-            const searchConditions = this.options.selectedColumns.map(col => 
-                `[${col}] LIKE '%${searchTerm.replace(/'/g, "''")}%'`
-            ).join(' OR ');
-            query += ` WHERE (${searchConditions})`;
+            const searchColumn = this.options.searchColumn;
+            const searchOperator = this.options.searchOperator || 'contains';
+            const escapedTerm = searchTerm.replace(/'/g, "''");
+            
+            let whereClause = '';
+            switch (searchOperator) {
+                case 'contains':
+                    whereClause = `[${searchColumn}] LIKE '%${escapedTerm}%'`;
+                    break;
+                case 'equals':
+                    whereClause = `[${searchColumn}] = '${escapedTerm}'`;
+                    break;
+                case 'starts_with':
+                    whereClause = `[${searchColumn}] LIKE '${escapedTerm}%'`;
+                    break;
+                case 'ends_with':
+                    whereClause = `[${searchColumn}] LIKE '%${escapedTerm}'`;
+                    break;
+                case 'not_contains':
+                    whereClause = `[${searchColumn}] NOT LIKE '%${escapedTerm}%'`;
+                    break;
+                case 'not_equals':
+                    whereClause = `[${searchColumn}] != '${escapedTerm}'`;
+                    break;
+                default:
+                    whereClause = `[${searchColumn}] LIKE '%${escapedTerm}%'`;
+            }
+            query += ` WHERE ${whereClause}`;
         }
         
         if (this.options.orderBy.trim()) {
@@ -275,8 +327,9 @@ class AdvancedGridViewerPanel {
             const title = this.escape(val);
             let cell = this.escape(truncated);
             
-            // Highlight search terms if search is active
-            if (this.options.searchTerm && this.options.searchTerm.trim()) {
+            // Highlight search terms if search is active and this is the search column
+            if (this.options.searchTerm && this.options.searchTerm.trim() && 
+                this.options.searchColumn && c === this.options.searchColumn) {
                 cell = this.highlightSearchTerm(cell, this.options.searchTerm);
             }
             
@@ -320,8 +373,18 @@ body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);col
 .control-group label{font-weight:600;white-space:nowrap;color:var(--vscode-foreground);font-size:13px}
 .control-group input, .control-group select{background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);padding:6px 10px;border-radius:4px;font-size:13px;min-width:120px}
 .control-group input:focus, .control-group select:focus{outline:1px solid var(--vscode-focusBorder);border-color:var(--vscode-focusBorder)}
-.search-container{display:flex;align-items:center;gap:4px;position:relative}
-.search-input{min-width:300px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);padding:8px 12px;border-radius:4px;font-size:13px;position:relative;flex:1}
+.search-selector{max-height:400px;overflow-y:auto;border:1px solid var(--vscode-panel-border);border-radius:6px;background:var(--vscode-input-background);padding:12px;position:absolute;z-index:1000;margin-top:8px;min-width:450px;max-width:600px;box-shadow:0 4px 12px rgba(0,0,0,0.15);top:100%}
+.search-selector-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--vscode-panel-border)}
+.search-selector-title{font-weight:600;color:var(--vscode-foreground);font-size:14px}
+.search-controls{margin-bottom:16px}
+.search-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;padding:8px;background:var(--vscode-editor-background);border-radius:4px;border:1px solid var(--vscode-panel-border)}
+.search-row label{font-weight:500;color:var(--vscode-foreground);font-size:13px;min-width:80px}
+.search-column-select, .search-operator-select{background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);padding:6px 8px;border-radius:4px;font-size:12px;min-width:200px;flex:1}
+.search-column-select:focus, .search-operator-select:focus{outline:1px solid var(--vscode-focusBorder);border-color:var(--vscode-focusBorder)}
+.search-input{background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);padding:6px 8px;border-radius:4px;font-size:12px;flex:1;min-width:200px}
+.search-input:disabled{opacity:0.5;cursor:not-allowed}
+.search-input:focus{outline:1px solid var(--vscode-focusBorder);border-color:var(--vscode-focusBorder)}
+.search-actions{display:flex;gap:8px;justify-content:flex-end}
 .search-input:focus{outline:1px solid var(--vscode-focusBorder);border-color:var(--vscode-focusBorder)}
 .search-input::placeholder{color:var(--vscode-descriptionForeground);font-style:italic}
 .search-highlight{background:var(--vscode-textBlockQuote-background);padding:1px 2px;border-radius:2px;font-weight:600}
@@ -409,10 +472,44 @@ td{color:var(--vscode-foreground);font-size:12px;line-height:1.3}
             </div>
              <div class="control-group">
                  <label>Search:</label>
-                 <div class="search-container">
-                     <input type="text" id="searchInput" class="search-input" placeholder="Search in all columns..." onkeyup="handleSearch()" oninput="handleSearchInput()">
-                     <button class="btn btn-small secondary" onclick="clearSearch()" id="clearSearchBtn" style="display:none" title="Clear search">✕</button>
+                 <button class="btn" onclick="toggleSearchSelector()">
+                     <span>🔍</span>
+                     Search${this.options.searchTerm ? ' (1)' : ''}
+                 </button>
+                 <div id="searchSelector" class="search-selector" style="display:none">
+                     <div class="search-selector-header">
+                         <div class="search-selector-title">Search in Column</div>
+                         <button class="btn btn-small secondary" onclick="closeSearchSelector()">✕</button>
+                     </div>
+                     <div class="search-controls">
+                         <div class="search-row">
+                             <label>Column:</label>
+                             <select id="searchColumnSelect" class="search-column-select" onchange="handleSearchColumnChange()">
+                                 <option value="">Select column to search...</option>
+                             </select>
+                         </div>
+                         <div class="search-row">
+                             <label>Operator:</label>
+                             <select id="searchOperatorSelect" class="search-operator-select" onchange="handleSearchOperatorChange()">
+                                 <option value="contains">Contains</option>
+                                 <option value="equals">Equals</option>
+                                 <option value="starts_with">Starts with</option>
+                                 <option value="ends_with">Ends with</option>
+                                 <option value="not_contains">Does not contain</option>
+                                 <option value="not_equals">Does not equal</option>
+                             </select>
+                         </div>
+                         <div class="search-row">
+                             <label>Search Term:</label>
+                             <input type="text" id="searchInput" class="search-input" placeholder="Enter search term..." onkeydown="handleSearchKeydown()" oninput="handleSearchInput()" disabled>
+                         </div>
+                     </div>
+                     <div class="search-actions">
+                         <button class="btn btn-small" onclick="applySearch()" id="searchBtn" title="Apply search" disabled>🔍 Search</button>
+                         <button class="btn btn-small secondary" onclick="clearSearch()" id="clearSearchBtn" title="Clear search">✕ Clear</button>
+                     </div>
                  </div>
+                 ${this.options.searchTerm ? `<button class="btn btn-small secondary" onclick="resetSearch()" id="resetSearchBtn" title="Reset search filter">🔄 Reset</button>` : ''}
              </div>
             <div class="control-group">
                 <label>Page Size:</label>
@@ -434,10 +531,10 @@ td{color:var(--vscode-foreground);font-size:12px;line-height:1.3}
                      <span class="stat-value">${totalPages}</span>
                      <span>pages</span>
                  </div>
-                 ${this.options.searchTerm ? `<div class="stat-item search-results">
-                     <span>🔍</span>
-                     <span>Searching: "${this.options.searchTerm}"</span>
-                 </div>` : ''}
+                  ${this.options.searchTerm && this.options.searchColumn ? `<div class="stat-item search-results">
+                      <span>🔍</span>
+                      <span>Searching "${this.options.searchTerm}" in ${this.options.searchColumn} (${this.options.searchOperator})</span>
+                  </div>` : ''}
              </div>
              <div class="control-group">
                  <button class="btn btn-small secondary" onclick="toggleQueryDisplay()" id="queryToggleBtn" title="Show/Hide executed query">
@@ -477,7 +574,8 @@ console.log('=== ADVANCED GRID VIEWER SCRIPT STARTING ===');
 let currentSort = { column: null, direction: 'asc' };
 let allColumns = [];
 let searchTerm = '';
-let searchTimeout = null;
+let searchColumn = '';
+let searchOperator = 'contains';
 let allData = [];
 
 // Immediate test
@@ -493,6 +591,12 @@ function initialize() {
     console.log('Page size select element:', pageSizeSelect);
     if (pageSizeSelect) {
         console.log('Page size select value:', pageSizeSelect.value);
+    }
+    
+    // Search button is always visible, clear button is hidden by default
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
     }
     
     loadTableSchema();
@@ -593,50 +697,146 @@ window.applyColumnSelection = function() {
     closeColumnSelector();
 };
 
-window.handleSearchInput = function() {
-    const searchInput = document.getElementById('searchInput');
-    const clearBtn = document.getElementById('clearSearchBtn');
+window.toggleSearchSelector = function() {
+    const selector = document.getElementById('searchSelector');
+    const isVisible = selector.style.display !== 'none';
+    selector.style.display = isVisible ? 'none' : 'block';
     
-    if (searchInput && clearBtn) {
-        if (searchInput.value.trim()) {
-            clearBtn.style.display = 'inline-flex';
-        } else {
-            clearBtn.style.display = 'none';
+    if (!isVisible) {
+        populateSearchColumnDropdown();
+        // Focus search input if column is already selected
+        if (searchColumn) {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.focus();
         }
     }
 };
 
-window.handleSearch = function() {
+window.closeSearchSelector = function() {
+    const selector = document.getElementById('searchSelector');
+    selector.style.display = 'none';
+};
+
+window.handleSearchColumnChange = function() {
+    const searchColumnSelect = document.getElementById('searchColumnSelect');
     const searchInput = document.getElementById('searchInput');
-    const newSearchTerm = searchInput.value.trim();
+    const searchBtn = document.getElementById('searchBtn');
     
-    // Clear previous timeout
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-    
-    // Debounce search to avoid too many requests
-    searchTimeout = setTimeout(() => {
-        if (newSearchTerm !== searchTerm) {
-            searchTerm = newSearchTerm;
-            performSearch();
+    if (searchColumnSelect && searchInput && searchBtn) {
+        searchColumn = searchColumnSelect.value;
+        
+        if (searchColumn) {
+            searchInput.disabled = false;
+            updateSearchPlaceholder();
+            searchInput.focus();
+        } else {
+            searchInput.disabled = true;
+            searchInput.placeholder = 'Enter search term...';
+            searchInput.value = '';
+            searchBtn.disabled = true;
         }
-    }, 300);
+    }
+};
+
+window.handleSearchOperatorChange = function() {
+    const searchOperatorSelect = document.getElementById('searchOperatorSelect');
+    if (searchOperatorSelect) {
+        searchOperator = searchOperatorSelect.value;
+        updateSearchPlaceholder();
+    }
+};
+
+function updateSearchPlaceholder() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput && searchColumn) {
+        const operatorText = {
+            'contains': 'contains',
+            'equals': 'equals',
+            'starts_with': 'starts with',
+            'ends_with': 'ends with',
+            'not_contains': 'does not contain',
+            'not_equals': 'does not equal'
+        };
+        searchInput.placeholder = 'Search where ' + searchColumn + ' ' + (operatorText[searchOperator] || 'contains') + '...';
+    }
+}
+
+window.handleSearchInput = function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    
+    if (searchInput && searchBtn) {
+        // Enable/disable search button based on input
+        searchBtn.disabled = !searchInput.value.trim() || !searchColumn;
+    }
+};
+
+window.handleSearchKeydown = function(event) {
+    if (event.key === 'Enter') {
+        applySearch();
+    }
+};
+
+window.applySearch = function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchOperatorSelect = document.getElementById('searchOperatorSelect');
+    
+    if (searchInput && searchColumn) {
+        searchTerm = searchInput.value.trim();
+        if (searchOperatorSelect) {
+            searchOperator = searchOperatorSelect.value;
+        }
+        performSearch();
+        closeSearchSelector();
+        updateSearchButtonText();
+    }
 };
 
 window.clearSearch = function() {
     const searchInput = document.getElementById('searchInput');
-    const clearBtn = document.getElementById('clearSearchBtn');
+    const searchColumnSelect = document.getElementById('searchColumnSelect');
+    const searchOperatorSelect = document.getElementById('searchOperatorSelect');
+    const searchBtn = document.getElementById('searchBtn');
     
     if (searchInput) {
         searchInput.value = '';
+        searchInput.disabled = true;
+        searchInput.placeholder = 'Enter search term...';
     }
-    if (clearBtn) {
-        clearBtn.style.display = 'none';
+    if (searchColumnSelect) {
+        searchColumnSelect.value = '';
+    }
+    if (searchOperatorSelect) {
+        searchOperatorSelect.value = 'contains';
+    }
+    if (searchBtn) {
+        searchBtn.disabled = true;
     }
     searchTerm = '';
+    searchColumn = '';
+    searchOperator = 'contains';
     performSearch();
+    updateSearchButtonText();
 };
+
+window.resetSearch = function() {
+    searchTerm = '';
+    searchColumn = '';
+    searchOperator = 'contains';
+    performSearch();
+    updateSearchButtonText();
+};
+
+function updateSearchButtonText() {
+    const searchButton = document.querySelector('button[onclick="toggleSearchSelector()"]');
+    if (searchButton) {
+        if (searchTerm) {
+            searchButton.innerHTML = '<span>🔍</span> Search (1)';
+        } else {
+            searchButton.innerHTML = '<span>🔍</span> Search';
+        }
+    }
+}
 
 window.editQuery = function() {
     const queryText = document.getElementById('queryText').textContent;
@@ -688,14 +888,16 @@ function performSearch() {
         return;
     }
     
-    console.log('Performing search with term:', searchTerm);
+    console.log('Performing search with term:', searchTerm, 'in column:', searchColumn, 'using operator:', searchOperator);
     
     try {
         vscode.postMessage({
             command: 'search',
             searchTerm: searchTerm,
+            searchColumn: searchColumn,
+            searchOperator: searchOperator,
             selectedColumns: allColumns.filter(col => col.selected).map(col => col.COLUMN_NAME),
-            orderBy: currentSort.column ? \`\${currentSort.column} \${currentSort.direction}\` : '',
+            orderBy: currentSort.column ? currentSort.column + ' ' + currentSort.direction : '',
             currentPage: 1, // Reset to first page when searching
             pageSize: parseInt(document.getElementById('pageSizeSelect').value)
         });
@@ -752,6 +954,44 @@ function renderColumnSelector() {
         item.appendChild(nullable);
         columnList.appendChild(item);
     });
+    
+    // Also populate search column dropdown
+    populateSearchColumnDropdown();
+}
+
+function populateSearchColumnDropdown() {
+    const searchColumnSelect = document.getElementById('searchColumnSelect');
+    if (!searchColumnSelect) return;
+    
+    // Clear existing options except the first one
+    while (searchColumnSelect.children.length > 1) {
+        searchColumnSelect.removeChild(searchColumnSelect.lastChild);
+    }
+    
+    // Add column options
+    allColumns.forEach(col => {
+        const option = document.createElement('option');
+        option.value = col.COLUMN_NAME;
+        option.textContent = col.COLUMN_NAME;
+        if (col.COLUMN_NAME === searchColumn) {
+            option.selected = true;
+        }
+        searchColumnSelect.appendChild(option);
+    });
+    
+    // If there's an active search, set the search input value and operator
+    if (searchColumn && searchTerm) {
+        const searchInput = document.getElementById('searchInput');
+        const searchOperatorSelect = document.getElementById('searchOperatorSelect');
+        if (searchInput) {
+            searchInput.value = searchTerm;
+            searchInput.disabled = false;
+            updateSearchPlaceholder();
+        }
+        if (searchOperatorSelect) {
+            searchOperatorSelect.value = searchOperator;
+        }
+    }
 }
 
 function updateColumns() {
@@ -836,6 +1076,15 @@ document.addEventListener('click', function(e) {
     
     if (selector && selector.style.display !== 'none' && !selectorContainer && !button) {
         closeColumnSelector();
+    }
+    
+    // Close search selector when clicking outside
+    const searchSelector = document.getElementById('searchSelector');
+    const searchButton = e.target.closest('button[onclick="toggleSearchSelector()"]');
+    const searchContainer = e.target.closest('.search-selector');
+    
+    if (searchSelector && searchSelector.style.display !== 'none' && !searchContainer && !searchButton) {
+        closeSearchSelector();
     }
 });
 
