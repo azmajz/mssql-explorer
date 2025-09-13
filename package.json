@@ -42,6 +42,11 @@
         "icon": "$(add)"
       },
       {
+        "command": "mssql-explorer.openConnectionView",
+        "title": "MSSQL: Open Connection View",
+        "icon": "$(add)"
+      },
+      {
         "command": "mssql-explorer.previewData",
         "title": "Preview Data",
         "icon": "$(eye)"

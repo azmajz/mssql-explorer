@@ -1,10 +1,11 @@
 const vscode = require('vscode');
-const { EXTENSION_CONFIG } = require('../constants');
+const { ConnectionViewPanel } = require('../connectionView');
 
 class ConnectionCommands {
-    constructor(connectionManager, treeProvider) {
+    constructor(connectionManager, treeProvider, context) {
         this.connectionManager = connectionManager;
         this.treeProvider = treeProvider;
+        this.context = context;
     }
 
     async pickConnection() {
@@ -27,58 +28,11 @@ class ConnectionCommands {
 
     async addConnection() {
         try {
-            console.log('Starting add connection process...');
-            const id = Date.now().toString();
-            const name = await vscode.window.showInputBox({ 
-                prompt: 'Connection name', 
-                value: 'MSSQL' 
-            });
-            if (!name) {
-                console.log('User cancelled at name input');
-                return;
-            }
-
-            const server = await vscode.window.showInputBox({ 
-                prompt: 'Server', 
-                placeHolder: 'localhost\\SQLEXPRESS' 
-            });
-            if (!server) {
-                console.log('User cancelled at server input');
-                return;
-            }
-
-            const database = await vscode.window.showInputBox({ 
-                prompt: 'Database (optional)' 
-            });
-            const user = await vscode.window.showInputBox({ 
-                prompt: 'User', 
-                value: 'sa' 
-            });
-            const password = await vscode.window.showInputBox({ 
-                prompt: 'Password', 
-                password: true 
-            });
-
-            const config = {
-                server,
-                database,
-                ...EXTENSION_CONFIG.DEFAULT_CONNECTION,
-                user,
-                password
-            };
-
-            console.log('Testing connection with config:', { ...config, password: '[HIDDEN]' });
-            await this.connectionManager.test(config);
-            console.log('Connection test successful, adding connection...');
-            await this.connectionManager.addConnection({ id, name, config });
-            if (this.treeProvider) {
-                this.treeProvider.refresh();
-            }
-            vscode.window.showInformationMessage('Connection added successfully');
+            ConnectionViewPanel.createOrShow(this.context, this.connectionManager, this.treeProvider);
         } catch (error) {
             const errorMessage = error.message || error.toString() || 'Unknown error occurred';
-            vscode.window.showErrorMessage(`Connection failed: ${errorMessage}`);
-            console.error('Connection error:', error);
+            vscode.window.showErrorMessage(`Failed to open connection view: ${errorMessage}`);
+            console.error('Connection view error:', error);
         }
     }
 

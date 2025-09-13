@@ -10,6 +10,7 @@ const EXTENSION_CONFIG = {
     // Command IDs
     COMMANDS: {
         ADD_CONNECTION: 'mssql-explorer.addConnection',
+        OPEN_CONNECTION_VIEW: 'mssql-explorer.openConnectionView',
         EDIT_CONNECTION: 'mssql-explorer.editConnection',
         DELETE_CONNECTION: 'mssql-explorer.deleteConnection',
         CONNECT: 'mssql-explorer.connect',

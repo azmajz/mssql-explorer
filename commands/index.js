@@ -15,9 +15,11 @@ function registerCommands(context, dependencies) {
     const { connectionManager, connectionsTreeProvider, bookmarkedTreeProvider, gridViewerPanel, queryManager } = dependencies;
 
     // Connection management commands
-    const connectionCommands = new ConnectionCommands(connectionManager, connectionsTreeProvider);
+    const connectionCommands = new ConnectionCommands(connectionManager, connectionsTreeProvider, context);
     context.subscriptions.push(
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.ADD_CONNECTION, 
+            () => connectionCommands.addConnection()),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.OPEN_CONNECTION_VIEW, 
             () => connectionCommands.addConnection()),
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.EDIT_CONNECTION, 
             (item) => connectionCommands.editConnection(item)),
