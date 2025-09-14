@@ -17,7 +17,8 @@ const EXTENSION_CONFIG = {
         DISCONNECT: 'mssql-explorer.disconnect',
         REFRESH: 'mssql-explorer.refresh',
         PREVIEW_DATA: 'mssql-explorer.previewData',
-        COPY_TABLE_NAME: 'mssql-explorer.copyTableName',
+        COPY_OBJECT_NAME: 'mssql-explorer.copyObjectName',
+        COPY_FULL_NAME: 'mssql-explorer.copyFullName',
         OPEN_OBJECT: 'mssql-explorer.openObject',
         FILTER_GROUP: 'mssql-explorer.filterGroup',
         CLEAR_GROUP_FILTER: 'mssql-explorer.clearGroupFilter',
@@ -62,7 +63,7 @@ const EXTENSION_CONFIG = {
     
     // Grid viewer settings
     GRID_VIEWER: {
-        MAX_ROWS: 1000,
+        MAX_ROWS: 100,
         MAX_CELL_LENGTH: 100
     }
 };

@@ -27,13 +27,14 @@ class ObjectCommands {
         );
     }
 
-    async copyTableName(item) {
+    async copyObjectFullName({item, includeDB}) {
         if (!item || !item.label) {
-            return vscode.window.showErrorMessage('No table name to copy');
+            return vscode.window.showErrorMessage('No object name to copy');
         }
-        
-        await vscode.env.clipboard.writeText(String(item.label));
-        vscode.window.showInformationMessage('Table name copied');
+        const { databaseName, label  } = item;
+        const text = includeDB ? `${databaseName}.${label}` : String(label); 
+        await vscode.env.clipboard.writeText(text);
+        vscode.window.showInformationMessage(`\`${text}\` copied`);
     }
 
     async selectDataWithOptions(item) {

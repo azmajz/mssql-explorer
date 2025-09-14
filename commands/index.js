@@ -37,8 +37,10 @@ function registerCommands(context, dependencies) {
     context.subscriptions.push(
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.PREVIEW_DATA, 
             (item) => objectCommands.previewData(item)),
-        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.COPY_TABLE_NAME, 
-            (item) => objectCommands.copyTableName(item)),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.COPY_OBJECT_NAME, 
+            (item) => objectCommands.copyObjectFullName({item, includeDB: false})),
+        vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.COPY_FULL_NAME, 
+            (item) => objectCommands.copyObjectFullName({item, includeDB: true})),
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.OPEN_OBJECT, 
             (args) => objectCommands.openObject(args)),
         vscode.commands.registerCommand(EXTENSION_CONFIG.COMMANDS.SELECT_DATA_WITH_OPTIONS, 

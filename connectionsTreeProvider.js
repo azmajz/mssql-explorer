@@ -352,9 +352,9 @@ class ConnectionsTreeProvider {
         const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon(icon);
         item.contextValue = kind;
-        item.databaseName = databaseName;
-        item.schema = schema;
-        item.name = name;
+        // item.databaseName = databaseName;
+        // item.schema = schema;
+        // item.name = name;
         item.command = {
             command: EXTENSION_CONFIG.COMMANDS.OPEN_OBJECT,
             title: 'Open',
