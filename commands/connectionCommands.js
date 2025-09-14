@@ -94,7 +94,24 @@ class ConnectionCommands {
 
     async connect(item) {
         try {
-            const id = item?.connectionId || (await this.pickConnection());
+            let id = item?.connectionId;
+            
+            // If no specific connection ID provided, check if there's only one connection
+            if (!id) {
+                const connections = this.connectionManager.listConnections();
+                if (connections.length === 1) {
+                    // If there's only one connection, connect to it directly
+                    id = connections[0].id;
+                } else if (connections.length > 1) {
+                    // If there are multiple connections, show picker
+                    id = await this.pickConnection();
+                } else {
+                    // No connections available
+                    vscode.window.showInformationMessage('No connections available. Please add a connection first.');
+                    return;
+                }
+            }
+            
             if (!id) return;
 
             const conn = this.connectionManager.listConnections().find(c => c.id === id);
